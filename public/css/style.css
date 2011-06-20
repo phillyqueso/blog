@@ -1,0 +1,27 @@
+ul { list-style-type:none; }
+
+header {
+    font-size: xx-large;
+    background-color: #ffffaa;
+}
+
+footer {
+    font-size: x-small;
+    background-color: #aaeeaa;
+}
+
+#blogEntry {
+    margin-top: 10px;
+    margin-bottom:10px;
+    padding: 8px;
+    border:2px dashed green;
+}
+
+#title {
+    font-size: larger;
+    font-weight: bold;
+}
+
+#byUser {
+    font-size: smaller;
+}
