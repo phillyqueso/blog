@@ -28,9 +28,8 @@ app.listen(8080);
 
 var socket = io.listen(app);
 socket.on('connection', function(client) {
-    console.log(client.sessionId + ' connected.\n');
 
-    // send all current blog posts
+    // send last 20 blog posts
     Posts.find({}).sort('createdDate', 1).limit(20).execFind(function(err, obj) {
 	if (obj != null)
 	    client.send({action: 'initLoad', data: obj});

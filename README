@@ -1,0 +1,4 @@
+A very simple Blog system using node.js mongodb, and socket.io
+
+to run:
+$ node blogServer.js
