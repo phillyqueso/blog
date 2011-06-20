@@ -1,12 +1,62 @@
 <html>
 <head>
   <title>Blog Title</title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+  <script src="socket.io/socket.io.js"></script> 
+
+  <script src="js/jwysiwyg/jquery.wysiwyg.js"></script>
+
+  <script src="js/blogClient.js"></script>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" />
+  <link rel="stylesheet" href="js/jwysiwyg/jquery.wysiwyg.css" type="text/css" />
 </head>
 <body>
   <header>Blog Header</header>
   <div id="content">
-    Blog Content
+    <div id="login">
+      <fieldset>
+	<legend>Login</legend>
+	<ul>
+	  <li>
+	    <label>User</label>
+	    <input type="text" id="user" name="user" />
+	  </li>
+	  <li>
+	    <label>Pass</label>
+	    <input type="password" id="pass" name="pass" />
+	  </li>
+	  <li>
+	    <input type="submit" id="authSubmit" value="submit">
+	  </li>
+	</ul>
+    </div>
+    </fieldset>
   </div>
-  <footer>Blog Footer</footer>
+  
+  <div id="newPost" style="display:none;">
+    <fieldset>
+      <legend>Add Post</legend>
+      <ul>
+	<li>
+	  <label>Title</label>
+	  <input type="text" id="title" name="title" />
+	</li>
+	<li>
+	  <label>Story</label>
+	  <textarea id="story" name="story" cols=80 rows=10></textarea>
+	</li>
+	<li>
+	  <input type="submit" id="postSubmit" value="Submit" />
+	</li>
+      </ul>
+    </fieldset>
+  </div>
+  
+  <div id="blog">      
+  </div>
+  
+</div>
+<footer>Blog Footer</footer>
 </body>
 </html>
