@@ -31,13 +31,20 @@ $(document).ready(function() {
 		// pass obj.data through loadBlogEntry function
 		loadBlogEntry(obj.data);
 		break;
+	    case 'updatePost':
+		// update
+		
+		break;
 	    }
 	}
     });
     
     socket.on('connect', function(){ console.log('Connected'); });
     socket.on('disconnect', function(){ console.log('Disconnected'); });
-    socket.on('reconnect', function(){ console.log('Reconnected to server'); });
+    socket.on('reconnect', function(){ 
+	$("#blog").html(""); //empty
+	console.log('Reconnected to server');
+    });
     socket.on('reconnecting', function( nextRetry ){ console.log('Attempting to re-connect to the server, next attempt in ' + nextRetry + 'ms'); });
     socket.on('reconnect_failed', function(){ console.log('Reconnected to server FAILED.'); });
     
@@ -65,7 +72,7 @@ $(document).ready(function() {
 });
 
 function loadBlogEntry(post) {
-var blogEntry = "<div id='blogEntry' blogid='"+post._id+"' bloguser='"+post.user+"'>\
+var blogEntry = "<div id='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
 <div id='title'>"+post.title+"</div>\
 <div id='story'>"+post.story+"</div>\
 <div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\

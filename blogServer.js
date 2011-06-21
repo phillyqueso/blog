@@ -65,6 +65,25 @@ socket.on('connection', function(client) {
 		    console.log("attempt to post without being logged in... Or as the wrong user...");
 		}
 		break;
+	    case 'updatePost':
+		if (client.username == obj.data.user && client.auth == true) {
+		    Posts.findOne({user: obj.data.user, postId: obj.data.postId}, function(err, res) {
+			if (!err) {
+			    //perform update
+			    res.story = obj.data.story;
+			    res.title = obj.data.title;
+			    res.save(function (err) {
+				//broadcast change (to all except me)
+				client.broadcast({'action': 'updatePost', 'data': res});
+			    });
+			} else {
+			    console.log("didn't find blog to be updated _id:".obj.data.postId);
+			}
+		    });
+		} else {
+		    console.log("not logged in. Cannot update.");
+		}
+		break;
 	    }
 	}
     });
