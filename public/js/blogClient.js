@@ -3,7 +3,7 @@ var user;
 
 $(document).ready(function() {
 
-    socket = new io.Socket(null, {port:8080, rememberTranspot: false});
+    socket = new io.Socket(null, {port:8080, rememberTranspot: false, connectTimeout:3000});
     socket.connect();
     
     socket.on('message', function(obj) {
