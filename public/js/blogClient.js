@@ -2,41 +2,37 @@ var socket;
 var user;
 
 $(document).ready(function() {
-
-    socket = new io.Socket(null, {port:8080, rememberTranspot: false, connectTimeout:3000});
-    socket.connect();
+    socket = io.connect(null, {port:8080, connectTimeout:8000});
     
-    socket.on('message', function(obj) {
-	if (obj.action != null) {
-	    switch (obj.action) {
-	    case 'initLoad':
-		for (var i = 0; i < obj.data.length; i++) {
-		    loadBlogEntry(obj.data[i]);
-		}
-		break;
-	    case 'auth':
-		if (obj.data == true) {
-		    // hide login form
-		    $("#login").css('display', 'none');
-		    // allow CRUD
-		    $("#newPost").css('display', 'block');
-		} else {
-		    // display auth failure
-		    alert("auth failed");
-		}
-		break;
-	    case 'newPost':
-		// incr newPosts by 1
-		// if "load new post" button is hidden, unhide
-		// pass obj.data through loadBlogEntry function
-		loadBlogEntry(obj.data);
-		break;
-	    case 'updatePost':
-		// update
-		
-		break;
-	    }
+    socket.on('initLoad', function(obj) {
+	for (var i = 0; i < obj.data.length; i++) {
+	    loadBlogEntry(obj.data[i]);
 	}
+    });
+
+    socket.on('auth', function(obj) {
+	if (obj.data == true) {
+	    if (obj.user != null)
+		user = obj.user;
+	    // hide login form
+	    $("#login").css('display', 'none');
+	    // allow CRUD
+	    $("#newPost").css('display', 'block');
+	} else {
+	    // display auth failure
+	    alert("auth failed");
+	}
+    });
+
+    socket.on('newPost', function(obj) {
+	// incr newPosts by 1
+	// if "load new post" button is hidden, unhide
+	// pass obj.data through loadBlogEntry function
+	loadBlogEntry(obj.data);
+    });
+
+    socket.on('updatePost', function(obj) {
+	// update
     });
     
     socket.on('connect', function(){ console.log('Connected'); });
@@ -53,7 +49,7 @@ $(document).ready(function() {
 	user = $("#user").val(); //global user var
 	var pass = $("#pass").val();
 
-	socket.send({action: 'auth', data: {user: user, pass: pass}});
+	socket.emit('auth', {data: {user: user, pass: pass}});
     });
 
     // when a blog post is completed
@@ -64,7 +60,7 @@ $(document).ready(function() {
 	$("#title").val('');
 	$("#story").wysiwyg("setContent", "");
 
-	socket.send({action: 'newPost', data: {user: user, title: title, story: story}});
+	socket.emit('newPost', {data: {user: user, title: title, story: story}});
     });
 
     $("#story").wysiwyg({initialContent: ""});
