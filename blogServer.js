@@ -4,7 +4,7 @@ io = require('socket.io').listen(app),
 mongoose = require('mongoose'),
 db = mongoose.connect('mongodb://localhost/blog');
 
-//var storage = new express.session.MemoryStore();
+var storage = new express.session.MemoryStore();
 
 var users = require(__dirname + '/models/users.js');
 var posts = require(__dirname + '/models/posts.js');
@@ -14,16 +14,15 @@ var Posts = mongoose.model('posts');
 
 app.configure(function() {
     app.use(express.logger());
-    //app.use(express.methodOverride());
-    //app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(express.bodyParser());
     app.use(express.cookieParser());
-    //app.use(express.session({ store: storage, secret: "p1ngp0ng" }));
-    //app.use(app.router);
+    app.use(express.session({ store: storage, secret: "p1ngp0ng" }));
+    app.use(app.router);
     app.use(express.static(__dirname + '/public'));
     app.use(express.errorHandler());
 });
 
-/*
 app.dynamicHelpers({
     session: function(req, res) {
 	return req.session;
@@ -34,12 +33,10 @@ app.get('/', function(req, res, next){
     //console.log(req.cookies['connect.sid']);
     next();
 });
-*/
 
 app.listen(8080);
 
 io.sockets.on('connection', function(client) {
-
     client.get("auth", function(res) {
 	if (res != null) {
 	    console.log("recognized user: " + res.user);
@@ -56,11 +53,10 @@ io.sockets.on('connection', function(client) {
     });
 
     client.on('auth', function(obj) {
-	Users.findOne({username: obj.data.user, password: obj.data.pass}, function (err,res) {
-	    if (res != null) {		
-		client.set("auth", res, function () {
-    		    client.emit('auth', {data: true});
-		});
+	Users.findOne({'username': obj.data.user, 'password': obj.data.pass}, function (err,res) {
+	    if (res != null) {
+		client.auth =  { username : res.username, _id : res._id };
+    		client.emit('auth', {data: true, user: res.username});
 	    } else {
 		console.log(err);
 		console.log("failed attempt: u/p: "+obj.data.user+" "+obj.data.pass);
@@ -70,8 +66,9 @@ io.sockets.on('connection', function(client) {
     });
 
     client.on('newPost', function(obj) {
-	client.get("auth", function(clientAuth) {
-	    if (clientAuth.username == obj.data.user) {
+	if (client.auth != null) {
+	    console.log(client.auth);
+	    if (client.auth.username == obj.data.user) {
 		var newPost = new Posts(obj.data);
 		newPost.save(function(err) {
 		    if (!err) {
@@ -82,12 +79,12 @@ io.sockets.on('connection', function(client) {
 	    } else {
 		console.log("attempt to post without being logged in... Or as the wrong user...");
 	    }
-	});
+	}
     });
     
     client.on('updatePost', function(obj) {
-	client.get("auth", function(clientAuth) {
-	    if (clientAuth.username == obj.data.user) {
+	if (client.auth != null) {
+	    if (client.auth.username == obj.data.user) {
 		Posts.findOne({user: obj.data.user, postId: obj.data.postId}, function(err, res) {
 		    if (!err) {
 			//perform update
@@ -95,7 +92,7 @@ io.sockets.on('connection', function(client) {
 			res.title = obj.data.title;
 			res.save(function (err) {
 			    //broadcast change (to all except me)
-			    client.broadcast.emit('updatePost', {'data': res});
+			    io.sockets.emit('updatePost', {'data': res});
 			});
 		    } else {
 			console.log("didn't find blog to be updated _id:".obj.data.postId);
@@ -104,7 +101,7 @@ io.sockets.on('connection', function(client) {
 	    } else {
 		console.log("not logged in. Cannot update.");
 	    }
-	});
+	}
     });
 
 });

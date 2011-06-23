@@ -11,9 +11,8 @@ $(document).ready(function() {
     });
 
     socket.on('auth', function(obj) {
-	if (obj.data == true) {
-	    if (obj.user != null)
-		user = obj.user;
+	if (obj.data == true && obj.user != null) {
+	    user = obj.user;
 	    // hide login form
 	    $("#login").css('display', 'none');
 	    // allow CRUD
@@ -32,7 +31,7 @@ $(document).ready(function() {
     });
 
     socket.on('updatePost', function(obj) {
-	// update
+	updateBlogEntry(obj);
     });
     
     socket.on('connect', function(){ console.log('Connected'); });
@@ -45,15 +44,18 @@ $(document).ready(function() {
     socket.on('reconnect_failed', function(){ console.log('Reconnected to server FAILED.'); });
     
     // when auth form is completed, attempt to login via blog's socket api
-    $("#authSubmit").click(function() {
+    $("#loginForm").submit(function() {
 	user = $("#user").val(); //global user var
 	var pass = $("#pass").val();
 
-	socket.emit('auth', {data: {user: user, pass: pass}});
+	socket.emit('auth', {data: {user: user, pass: pass}}, function() {
+	    pass = null;
+	});
+	return false;
     });
 
     // when a blog post is completed
-    $("#postSubmit").click(function() {
+    $("#newPostForm").submit(function() {
 	var title = $("#title").val();
 	var story = $("#story").val();
 	
@@ -61,6 +63,7 @@ $(document).ready(function() {
 	$("#story").wysiwyg("setContent", "");
 
 	socket.emit('newPost', {data: {user: user, title: title, story: story}});
+	return false;
     });
 
     $("#story").wysiwyg({initialContent: ""});
@@ -74,4 +77,12 @@ var blogEntry = "<div id='blogEntry' postid='"+post._id+"' postuser='"+post.user
 <div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
 </div>";
     $("#blog").prepend(blogEntry);
+}
+
+function updateBlogEntry(post) {
+    var curPost = $("[blogid="+post._id+"]");
+    if (curPost != null) {
+	curPost.$("#title").val(post.title);
+	curPost.$("#story").val(post.story);
+    }
 }
