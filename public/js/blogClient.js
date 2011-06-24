@@ -34,8 +34,10 @@ $(document).ready(function() {
 	// if "load new post" button is hidden, unhide
 	// pass obj.data through loadBlogEntry function
 	loadBlogEntry(obj.data);
-	var el = $("[postid="+obj.data._id+"]");
-	makePostEditable(el, obj.data._id);
+	if (user != null && user == obj.data.user) {
+	    var el = $("[postid="+obj.data._id+"]");
+	    makePostEditable(el, obj.data._id);
+	}
     });
 
     socket.on('updatePost', function(obj) {
