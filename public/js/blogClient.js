@@ -100,7 +100,8 @@ function updateBlogEntry(el, post) {
 }
 
 function makePostEditable(el, postId) {
-    $(el).prepend('<span class="deleteX"><a href="#" id="deleteX">X</a></span>').click(function() {
+    $(el).prepend('<span class="deleteX"><a href="#" id="deleteX">X</a></span>');
+    $(el).find('#deleteX').click(function() {
 	var answer = confirm("Are you sure you want to delete this Post?");
 	if (answer)
 	    socket.emit('deletePost', {'data': {'user': user, 'postId': postId}});
