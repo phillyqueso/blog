@@ -20,6 +20,11 @@ $(document).ready(function() {
 	    // make user's posts editable
 	    $("[postuser="+user+"]").each(function(index) {
 		$(this).css('border-color', 'orange'); //indicate editable
+		$(this).find("#title").editable(function(value, setting) {
+		    var postId = $(this).parent().attr('postid');
+		    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'title': value}});
+		    return(value);
+		}, {type: 'textarea', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
 		$(this).find("#story").editable(function(value, setting) {
 		    var postId = $(this).parent().attr('postid');
 		    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'story': value}});
