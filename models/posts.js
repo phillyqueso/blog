@@ -4,9 +4,9 @@ ObjectId = Schema.ObjectId;
 
 var postsSchema = new Schema({
     postId: ObjectId,
-    username : { type: String, required: true },
-    title : { type: String, required: true },
-    story : { type: String, required: true },
+    username : { type: String },
+    title : { type: String },
+    story : { type: String },
     createdDate : { type: Date, default: Date.now }
 });
 

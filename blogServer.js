@@ -37,6 +37,8 @@ app.get('/', function(req, res, next){
 app.listen(8080);
 
 io.sockets.on('connection', function(client) {
+    //this will begin to work once set/get works properly
+/*
     client.get("auth", function(res) {
 	if (res != null) {
 	    console.log("recognized user: " + res.user);
@@ -45,6 +47,7 @@ io.sockets.on('connection', function(client) {
 	    console.log(res+" sessions missed...");
 	}
     });
+*/
 
     // send last 20 blog posts
     Posts.find({}).sort('createdDate', 1).limit(20).execFind(function(err, obj) {
@@ -67,7 +70,6 @@ io.sockets.on('connection', function(client) {
 
     client.on('newPost', function(obj) {
 	if (client.auth != null) {
-	    console.log(client.auth);
 	    if (client.auth.username == obj.data.user) {
 		var newPost = new Posts(obj.data);
 		newPost.save(function(err) {
@@ -85,14 +87,16 @@ io.sockets.on('connection', function(client) {
     client.on('updatePost', function(obj) {
 	if (client.auth != null) {
 	    if (client.auth.username == obj.data.user) {
-		Posts.findOne({user: obj.data.user, postId: obj.data.postId}, function(err, res) {
+		Posts.findOne({user: client.auth.username, _id: obj.data.postId}, function(err, res) {
 		    if (!err) {
 			//perform update
-			res.story = obj.data.story;
-			res.title = obj.data.title;
+			if (obj.data.story != null)
+			    res.story = obj.data.story;
+			if (obj.data.title != null)
+			    res.title = obj.data.title;
 			res.save(function (err) {
 			    //broadcast change (to all except me)
-			    io.sockets.emit('updatePost', {'data': res});
+			    client.broadcast.emit('updatePost', {'data': res});
 			});
 		    } else {
 			console.log("didn't find blog to be updated _id:".obj.data.postId);

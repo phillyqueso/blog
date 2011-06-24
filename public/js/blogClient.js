@@ -17,6 +17,16 @@ $(document).ready(function() {
 	    $("#login").css('display', 'none');
 	    // allow CRUD
 	    $("#newPost").css('display', 'block');
+	    // make user's posts editable
+	    $("[postuser="+user+"]").each(function(index) {
+		$(this).css('border-color', 'orange'); //indicate editable
+		$(this).find("#story").editable(function(value, setting) {
+		    var postId = $(this).parent().attr('postid');
+		    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'story': value}});
+		    return(value);
+		}, {type: 'jwysiwyg', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
+	    });
+	    
 	} else {
 	    // display auth failure
 	    alert("auth failed");
@@ -80,9 +90,9 @@ var blogEntry = "<div id='blogEntry' postid='"+post._id+"' postuser='"+post.user
 }
 
 function updateBlogEntry(post) {
-    var curPost = $("[blogid="+post._id+"]");
+    var curPost = $("[postid="+post._id+"]");
     if (curPost != null) {
-	curPost.$("#title").val(post.title);
-	curPost.$("#story").val(post.story);
+	curPost.find("#title").val(post.title);
+	curPost.find("#story").val(post.story);
     }
 }
