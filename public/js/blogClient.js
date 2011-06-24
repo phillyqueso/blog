@@ -19,17 +19,8 @@ $(document).ready(function() {
 	    $("#newPost").css('display', 'block');
 	    // make user's posts editable
 	    $("[postuser="+user+"]").each(function(index) {
-		$(this).css('border-color', 'orange'); //indicate editable
-		$(this).find("#title").editable(function(value, setting) {
-		    var postId = $(this).parent().attr('postid');
-		    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'title': value}});
-		    return(value);
-		}, {type: 'textarea', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
-		$(this).find("#story").editable(function(value, setting) {
-		    var postId = $(this).parent().attr('postid');
-		    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'story': value}});
-		    return(value);
-		}, {type: 'jwysiwyg', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
+		var postId = $(this).attr('postid');
+		makePostEditable(this, postId);
 	    });
 	    
 	} else {
@@ -43,6 +34,8 @@ $(document).ready(function() {
 	// if "load new post" button is hidden, unhide
 	// pass obj.data through loadBlogEntry function
 	loadBlogEntry(obj.data);
+	var el = $("[postid="+obj.data._id+"]");
+	makePostEditable(el, obj.data._id);
     });
 
     socket.on('updatePost', function(obj) {
@@ -100,4 +93,20 @@ function updateBlogEntry(post) {
 	curPost.find("#title").val(post.title);
 	curPost.find("#story").val(post.story);
     }
+}
+
+function makePostEditable(el, postId) {
+    $(el).css('border-color', 'orange'); //indicate editable
+    $(el).find("#title").editable(function(value, setting) {
+	if (value != null) {
+	    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'title': value}});
+	}
+	return(value);
+    }, {type: 'textarea', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
+    $(el).find("#story").editable(function(value, setting) {
+	if (value != null) {
+	    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'story': value}});
+	}
+	return(value);
+    }, {type: 'jwysiwyg', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
 }
