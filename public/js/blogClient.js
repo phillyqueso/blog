@@ -44,6 +44,10 @@ $(document).ready(function() {
 	var el = $("[postid="+obj.data._id+"]");
 	updateBlogEntry(el, obj.data);
     });
+
+    socket.on('deletePost', function(obj) {
+	$("[postid="+obj.data._id+"]").remove();
+    });
     
     socket.on('connect', function(){ console.log('Connected'); });
     socket.on('disconnect', function(){ console.log('Disconnected'); });
@@ -96,6 +100,12 @@ function updateBlogEntry(el, post) {
 }
 
 function makePostEditable(el, postId) {
+    $(el).prepend('<span class="deleteX"><a href="#" id="deleteX">X</a></span>').click(function() {
+	var answer = confirm("Are you sure you want to delete this Post?");
+	if (answer)
+	    socket.emit('deletePost', {'data': {'user': user, 'postId': postId}});
+	return false;
+    });
     $(el).css('border-color', 'orange'); //indicate editable
     $(el).find("#title").editable(function(value, setting) {
 	if (value != null) {

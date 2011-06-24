@@ -99,11 +99,31 @@ io.sockets.on('connection', function(client) {
 			    client.broadcast.emit('updatePost', {'data': res});
 			});
 		    } else {
-			console.log("didn't find blog to be updated _id:".obj.data.postId);
+			console.log("didn't find post to be updated _id:".obj.data.postId);
 		    }
 		});
 	    } else {
 		console.log("not logged in. Cannot update.");
+	    }
+	}
+    });
+
+    client.on('deletePost', function(obj) {
+	if (client.auth != null) {
+	    if (client.auth.username == obj.data.user) {
+		Posts.findOne({user: client.auth.username, _id: obj.data.postId}, function(err, res) {
+		    if (!err) {
+			res.remove();
+			res.save(function (err) {
+			    //broadcast delete
+			    io.sockets.emit('deletePost', {'data': {'_id': obj.data.postId}});
+			});
+		    } else {
+			console.log("didn't find post to be deleted _id:".obj.data.postId);
+		    }
+		});
+	    } else {
+		console.log("not logged in. Cannot delete post.");
 	    }
 	}
     });

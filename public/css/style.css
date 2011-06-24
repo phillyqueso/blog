@@ -25,3 +25,8 @@ footer {
 #byUser {
     font-size: smaller;
 }
+
+.deleteX {
+    font-size: smaller;
+    float: right;
+}
