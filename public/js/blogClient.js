@@ -41,7 +41,8 @@ $(document).ready(function() {
     });
 
     socket.on('updatePost', function(obj) {
-	updateBlogEntry(obj);
+	var el = $("[postid="+obj.data._id+"]");
+	updateBlogEntry(el, obj.data);
     });
     
     socket.on('connect', function(){ console.log('Connected'); });
@@ -89,12 +90,9 @@ var blogEntry = "<div id='blogEntry' postid='"+post._id+"' postuser='"+post.user
     $("#blog").prepend(blogEntry);
 }
 
-function updateBlogEntry(post) {
-    var curPost = $("[postid="+post._id+"]");
-    if (curPost != null) {
-	curPost.find("#title").val(post.title);
-	curPost.find("#story").val(post.story);
-    }
+function updateBlogEntry(el, post) {
+    $(el).find("#title").html(post.title);
+    $(el).find("#story").html(post.story);
 }
 
 function makePostEditable(el, postId) {
