@@ -4,7 +4,7 @@ var user;
 $(document).ready(function() {
     socket = io.connect(null, {port:8080, connectTimeout:8000});
     
-    socket.on('initLoad', function(obj) {
+    socket.on('loadPosts', function(obj) {
 	for (var i = 0; i < obj.data.length; i++) {
 	    loadBlogEntry(obj.data[i]);
 	}
@@ -82,6 +82,14 @@ $(document).ready(function() {
     });
 
     $("#story").wysiwyg({initialContent: ""});
+
+    //once you reach the bottom of the page, load more posts (if there are any)
+    $(window).scroll(function(){
+        if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+	    //alert('reached bottom');
+	    socket.emit('moreLoad', {});
+        }
+    });
 
 });
 

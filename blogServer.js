@@ -12,6 +12,8 @@ var posts = require(__dirname + '/models/posts.js');
 var Users = mongoose.model('users');
 var Posts = mongoose.model('posts');
 
+const perPage = 20;
+
 app.configure(function() {
     app.use(express.logger());
     app.use(express.methodOverride());
@@ -49,10 +51,12 @@ io.sockets.on('connection', function(client) {
     });
 */
 
+    client.curPage = 1; // initalize current page to 1 for client
+
     // send last 20 blog posts
-    Posts.find({}).sort('createdDate', 1).limit(20).execFind(function(err, obj) {
+    Posts.find({}).sort('createdDate', 1).limit(perPage).execFind(function(err, obj) {
 	if (obj != null)
-	    client.emit('initLoad', {data: obj});
+	    client.emit('loadPosts', {data: obj});
     });
 
     client.on('auth', function(obj) {
@@ -126,6 +130,18 @@ io.sockets.on('connection', function(client) {
 		console.log("not logged in. Cannot delete post.");
 	    }
 	}
+    });
+
+    client.on('moreLoad', function() {
+	// send last 20 blog posts
+	Posts.find({}).sort('createdDate', 1).skip(client.curPage * perPage).limit(perPage).execFind(function(err, obj) {
+	    if (obj != null) {
+		client.emit('loadPosts', {data: obj});
+		client.curPage++;
+	    }
+
+	});
+
     });
 
 });
