@@ -2,6 +2,7 @@ const express = require('express'),
 app = express.createServer(),
 io = require('socket.io').listen(app),
 mongoose = require('mongoose'),
+DocumentObjectId = mongoose.Types.ObjectId,
 db = mongoose.connect('mongodb://localhost/blog');
 
 var storage = new express.session.MemoryStore();
@@ -12,7 +13,7 @@ var posts = require(__dirname + '/models/posts.js');
 var Users = mongoose.model('users');
 var Posts = mongoose.model('posts');
 
-const perPage = 20;
+const perPage = 10;
 
 app.configure(function() {
     app.use(express.logger());
@@ -51,10 +52,8 @@ io.sockets.on('connection', function(client) {
     });
 */
 
-    client.curPage = 1; // initalize current page to 1 for client
-
     // send last 20 blog posts
-    Posts.find({}).sort('createdDate', 1).limit(perPage).execFind(function(err, obj) {
+    Posts.find().sort("_id", -1).limit(perPage).execFind(function(err, obj) {
 	if (obj != null)
 	    client.emit('loadPosts', {data: obj});
     });
@@ -132,16 +131,12 @@ io.sockets.on('connection', function(client) {
 	}
     });
 
-    client.on('moreLoad', function() {
-	// send last 20 blog posts
-	Posts.find({}).sort('createdDate', 1).skip(client.curPage * perPage).limit(perPage).execFind(function(err, obj) {
-	    if (obj != null) {
-		client.emit('loadPosts', {data: obj});
-		client.curPage++;
+    client.on('moreLoad', function(obj) {
+	Posts.find({_id: { "$lt": obj.data.postId } }).sort('_id', -1).limit(perPage).execFind(function(err, res) {
+	    if (res != null) {
+		client.emit('loadPosts', {data: res});
 	    }
-
 	});
-
     });
 
 });

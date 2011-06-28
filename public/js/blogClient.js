@@ -33,7 +33,7 @@ $(document).ready(function() {
 	// incr newPosts by 1
 	// if "load new post" button is hidden, unhide
 	// pass obj.data through loadBlogEntry function
-	loadBlogEntry(obj.data);
+	loadBlogEntryTop(obj.data);
 	if (user != null && user == obj.data.user) {
 	    var el = $("[postid="+obj.data._id+"]");
 	    makePostEditable(el, obj.data._id);
@@ -86,20 +86,29 @@ $(document).ready(function() {
     //once you reach the bottom of the page, load more posts (if there are any)
     $(window).scroll(function(){
         if ($(window).scrollTop() == $(document).height() - $(window).height()) {
-	    //alert('reached bottom');
-	    socket.emit('moreLoad', {});
+	    var lastId = $(".blogEntry").filter(":last").attr('postid');
+	    socket.emit('moreLoad', {'data': {'postId': lastId}});
         }
     });
 
 });
 
-function loadBlogEntry(post) {
-var blogEntry = "<div id='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
+function loadBlogEntryTop(post) {
+var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
 <div id='title'>"+post.title+"</div>\
 <div id='story'>"+post.story+"</div>\
 <div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
 </div>";
     $("#blog").prepend(blogEntry);
+}
+
+function loadBlogEntry(post) {
+var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
+<div id='title'>"+post.title+"</div>\
+<div id='story'>"+post.story+"</div>\
+<div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
+</div>";
+    $("#blog").append(blogEntry);
 }
 
 function updateBlogEntry(el, post) {

@@ -3,7 +3,7 @@ Schema = mongoose.Schema,
 ObjectId = Schema.ObjectId;
 
 var postsSchema = new Schema({
-    postId: ObjectId,
+    _id: ObjectId,
     username : { type: String },
     title : { type: String },
     story : { type: String },
