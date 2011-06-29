@@ -16,6 +16,7 @@ const perPage = 10;
 
 app.configure(function() {
     app.set('view engine', 'jade');
+    app.set('views', __dirname + '/views');
     app.use(express.logger());
     app.use(express.methodOverride());
     app.use(express.bodyParser());
