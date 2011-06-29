@@ -2,7 +2,6 @@ const express = require('express'),
 app = express.createServer(),
 io = require('socket.io').listen(app),
 mongoose = require('mongoose'),
-DocumentObjectId = mongoose.Types.ObjectId,
 db = mongoose.connect('mongodb://localhost/blog');
 
 var storage = new express.session.MemoryStore();
@@ -26,42 +25,64 @@ app.configure(function() {
     app.use(express.errorHandler());
 });
 
-app.dynamicHelpers({
-    session: function(req, res) {
-	return req.session;
-    }
-});
-
-app.get('/', function(req, res, next){
-    //console.log(req.cookies['connect.sid']);
-    next();
-});
-
 app.listen(8080);
 
-io.sockets.on('connection', function(client) {
-    //this will begin to work once set/get works properly
-/*
-    client.get("auth", function(res) {
-	if (res != null) {
-	    console.log("recognized user: " + res.user);
-	    client.emit('auth', {data: true, user: res.user});
-	} else {
-	    console.log(res+" sessions missed...");
-	}
-    });
-*/
+parseCookie = function(str){
+  var obj = {}
+    , pairs = str.split(/[;,] */);
+  for (var i = 0, len = pairs.length; i < len; ++i) {
+    var pair = pairs[i]
+      , eqlIndex = pair.indexOf('=')
+      , key = pair.substr(0, eqlIndex).trim().toLowerCase()
+      , val = pair.substr(++eqlIndex, pair.length).trim();
 
+    // Quoted values
+    if (val[0] === '"') {
+      val = val.slice(1, -1);
+    }
+
+    // Only assign once
+    if (obj[key] === undefined) {
+      obj[key] = decodeURIComponent(val.replace(/\+/g, ' '));
+    }
+  }
+  return obj;
+};
+
+io.sockets.on('connection', function(client) {
     // send last 20 blog posts
     Posts.find().sort("_id", -1).limit(perPage).execFind(function(err, obj) {
-	if (obj != null)
+	if (obj != null) {
 	    client.emit('loadPosts', {data: obj});
+
+	    //check for session/reload of page
+	    var clientCookies = parseCookie(client.handshake.headers.cookie);
+	    client.sid = clientCookies['connect.sid'];
+	    
+	    storage.get(client.sid, function(err, res) {
+		if (res != null) {
+		    client.session = res;
+		    if (res.auth != null) {
+			client.auth = res.auth;
+			console.log("recognized user: " + res.auth.username);
+			client.emit('auth', {data: true, user: res.auth.username});
+		    }
+		} else {
+		    console.log(res+" sessions missed...");
+		}
+	    });	    
+	}
     });
 
+    //emit on definitions
     client.on('auth', function(obj) {
 	Users.findOne({'username': obj.data.user, 'password': obj.data.pass}, function (err,res) {
 	    if (res != null) {
 		client.auth =  { username : res.username, _id : res._id };
+		if (client.session) {
+		    client.session['auth'] = client.auth;
+		    storage.set(client.sid, client.session);
+		}
     		client.emit('auth', {data: true, user: res.username});
 	    } else {
 		console.log(err);
