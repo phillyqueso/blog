@@ -1,0 +1,33 @@
+header
+  a(href='/') Blog Title
+#content
+  #login
+    form#loginForm
+      fieldset
+        legend Login
+        ul
+          li
+            label User
+            input#user(type='text', name='user')
+          li
+            label Pass
+            input#pass(type='password', name='pass')
+          li
+            input#authSubmit(type='submit', value='submit')
+#newPost(style='display:none;')
+  form#newPostForm
+    fieldset
+      legend Add Post
+        ul
+          li
+            label Title
+              input#title(type='text', name='title')
+          li
+            label Story
+            textarea#story(name='story', cols='80', rows='10')
+          li
+            input#postSubmit(type='submit', value='Submit')
+#blog
+footer Blog Footer
+script(src='socket.io/socket.io.js')
+script(src='js/blogClient.js')

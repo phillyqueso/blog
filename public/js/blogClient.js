@@ -95,7 +95,7 @@ $(document).ready(function() {
 
 function loadBlogEntryTop(post) {
 var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
-<div id='title'>"+post.title+"</div>\
+<a href='/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
 <div id='story'>"+post.story+"</div>\
 <div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
 </div>";
@@ -104,7 +104,7 @@ var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.u
 
 function loadBlogEntry(post) {
 var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
-<div id='title'>"+post.title+"</div>\
+<a href='/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
 <div id='story'>"+post.story+"</div>\
 <div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
 </div>";

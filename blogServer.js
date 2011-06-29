@@ -15,6 +15,7 @@ var Posts = mongoose.model('posts');
 const perPage = 10;
 
 app.configure(function() {
+    app.set('view engine', 'jade');
     app.use(express.logger());
     app.use(express.methodOverride());
     app.use(express.bodyParser());
@@ -23,6 +24,24 @@ app.configure(function() {
     app.use(app.router);
     app.use(express.static(__dirname + '/public'));
     app.use(express.errorHandler());
+});
+
+app.param('postId', function(req, res, next, id) {
+    Posts.findById(id, function(err, res) {
+	if (err) return next(err);
+	if (!res) return next(new Error('failed to find post'));
+	req.post = res;
+	next();
+    });
+});
+
+app.get('/:postId', function(req, res) {
+    // inject the post into a layout/template
+    res.render('singlePost', { data: req.post });
+});
+
+app.get('/', function(req, res) {
+    res.render('index');
 });
 
 app.listen(8080);

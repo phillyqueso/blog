@@ -1,0 +1,8 @@
+header
+  a(href='/') Blog Title
+#blog
+  .blogEntry(blogid='#{data._id}', bloguser='#{data.user}')
+    #title #{data.title}
+    #story #{data.story}
+    #byUser by #{data.user} on #{data.createdDate}
+footer Blog Footer
