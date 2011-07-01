@@ -128,7 +128,6 @@ var main = io.of('/main').on('connection', function(client) {
 		newPost.save(function(err) {
 		    if (!err) {
 			// broadcast new Post to all connected clients
-			//io.sockets.emit('newPost', {data: newPost});
 			main.emit('newPost', {data: newPost});
 		    }
 		});
@@ -170,7 +169,6 @@ var main = io.of('/main').on('connection', function(client) {
 			res.remove();
 			res.save(function(err) {
 			    //broadcast delete
-			    //io.sockets.emit('deletePost', {'data': {'_id': obj.data.postId}});
 			    main.emit('deletePost', {'data': {'_id': obj.data.postId}});
 			});
 		    } else {
