@@ -1,4 +1,3 @@
-
 /**
  * Module dependencies.
  */
@@ -24,6 +23,7 @@ function SocketNamespace (mgr, name) {
   this.manager = mgr;
   this.name = name || '';
   this.sockets = {};
+  this.auth = false;
   this.setFlags();
 };
 
@@ -32,6 +32,14 @@ function SocketNamespace (mgr, name) {
  */
 
 SocketNamespace.prototype.__proto__ = EventEmitter.prototype;
+
+/**
+ * Copies emit since we override it
+ *
+ * @api private
+ */
+
+SocketNamespace.prototype.$emit = EventEmitter.prototype.emit;
 
 /**
  * Retrieves all clients as Socket instances as an array.
@@ -174,7 +182,7 @@ SocketNamespace.prototype.send = function (data) {
 
 SocketNamespace.prototype.emit = function (name) {
   if (name == 'connection' || name == 'newListener') {
-    return EventEmitter.prototype.emit.apply(this, arguments);
+    return this.$emit.apply(this, arguments);
   }
 
   return this.packet({
@@ -200,6 +208,17 @@ SocketNamespace.prototype.socket = function (sid, readable) {
 };
 
 /**
+ * Sets authorization for this namespace
+ *
+ * @api public
+ */
+
+SocketNamespace.prototype.authorization = function (fn) {
+  this.auth = fn;
+  return this;
+};
+
+/**
  * Called when a socket disconnects entirely.
  *
  * @api private
@@ -209,6 +228,30 @@ SocketNamespace.prototype.handleDisconnect = function (sid, reason) {
   if (this.sockets[sid] && this.sockets[sid].readable) {
     this.sockets[sid].onDisconnect(reason);
   }
+};
+
+/**
+ * Performs authentication.
+ *
+ * @param Object client request data
+ * @api private
+ */
+
+SocketNamespace.prototype.authorize = function (data, fn) {
+  if (this.auth) {
+    var self = this;
+
+    this.auth.call(this, data, function (err, authorized) {
+      self.log.debug('client ' +
+        (authorized ? '' : 'un') + 'authorized for ' + self.name);
+      fn(err, authorized);
+    });
+  } else {
+    this.log.debug('client authorized for ' + this.name);
+    fn(null, true);
+  }
+
+  return this;
 };
 
 /**
@@ -231,16 +274,42 @@ SocketNamespace.prototype.handlePacket = function (sessid, packet) {
     });
   };
 
+  function error (err) {
+    self.log.warn('handshake error ' + err + ' for ' + self.name);
+    socket.packet({ type: 'error', reason: err });
+  };
+
+  function connect () {
+    self.manager.onJoin(sessid, self.name);
+    self.store.publish('join', sessid, self.name);
+
+    // packet echo
+    socket.packet({ type: 'connect' });
+
+    // emit connection event
+    self.emit('connection', socket);
+  };
+
   switch (packet.type) {
     case 'connect':
-      this.manager.onJoin(sessid, this.name);
-      this.store.publish('join', sessid, this.name);
+      if (packet.endpoint == '') {
+        connect();
+      } else {
+        var manager = this.manager
+          , handshakeData = manager.handshaken[sessid];
 
-      // packet echo
-      socket.packet({ type: 'connect' });
+        this.authorize(handshakeData, function (err, authorized, newData) {
+          if (err) return error(err);
 
-      // emit connection event
-      self.emit('connection', socket);
+          if (authorized) {
+            manager.onHandshake(sessid, newData || handshakeData);
+            self.store.publish('handshake', sessid, newData || handshakeData);
+            connect();
+          } else {
+            error('unauthorized');
+          }
+        });
+      }
       break;
 
     case 'ack':
@@ -264,7 +333,7 @@ SocketNamespace.prototype.handlePacket = function (sessid, packet) {
       this.manager.onLeave(sessid, this.name);
       this.store.publish('leave', sessid, this.name);
 
-      socket.emit('disconnect');
+      socket.emit('disconnect', packet.reason || 'packet');
       break;
 
     case 'json':

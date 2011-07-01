@@ -17,6 +17,19 @@ footer {
     border:2px dashed green;
 }
 
+.commentEntry {
+    margin-top: 10px;
+    margin-bottom:10px;
+    padding: 8px;
+    border:2px dashed grey;
+}
+
+#commentsCount {
+    margin-top: 5px;
+    font-size: smaller;
+    font-weight: bold;
+}
+
 #title {
     font-size: larger;
     font-weight: bold;

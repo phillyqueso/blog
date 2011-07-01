@@ -2,7 +2,7 @@ var socket;
 var user;
 
 $(document).ready(function() {
-    socket = io.connect(null, {port:8080, connectTimeout:8000});
+    socket = io.connect('/main', {port:8080, connectTimeout:8000});
     
     socket.on('loadPosts', function(obj) {
 	for (var i = 0; i < obj.data.length; i++) {
@@ -28,6 +28,7 @@ $(document).ready(function() {
 	    alert("auth failed");
 	}
     });
+
 
     socket.on('newPost', function(obj) {
 	// incr newPosts by 1
@@ -93,20 +94,26 @@ $(document).ready(function() {
 
 });
 
+var strDateToString = function(strDate) {
+    return strDate ? new Date(strDate).toString() : new Date().toString();
+}
+
 function loadBlogEntryTop(post) {
-var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
+    var dateVar = strDateToString(post.createdDate);
+    var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
 <a href='/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
 <div id='story'>"+post.story+"</div>\
-<div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
+<div id='byUser'>by "+post.user+" on "+dateVar+"</div>\
 </div>";
     $("#blog").prepend(blogEntry);
 }
 
 function loadBlogEntry(post) {
-var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
+    var dateVar = strDateToString(post.createdDate);
+    var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
 <a href='/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
 <div id='story'>"+post.story+"</div>\
-<div id='byUser'>by "+post.user+" on "+post.createdDate+"</div>\
+<div id='byUser'>by "+post.user+" on "+dateVar+"</div>\
 </div>";
     $("#blog").append(blogEntry);
 }
@@ -125,6 +132,10 @@ function makePostEditable(el, postId) {
 	return false;
     });
     $(el).css('border-color', 'orange'); //indicate editable
+
+    //@todo: find solution to editable link
+    //$(el).find("#title").parent().prepend("(link)");
+
     $(el).find("#title").editable(function(value, setting) {
 	if (value != null) {
 	    socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'title': value}});

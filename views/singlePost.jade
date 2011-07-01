@@ -1,8 +1,17 @@
 header
   a(href='/') Blog Title
+!= partial('login')
 #blog
-  .blogEntry(blogid='#{data._id}', bloguser='#{data.user}')
+  .blogEntry(postid='#{data._id}', postuser='#{data.user}')
     #title #{data.title}
     #story!= data.story
     #byUser by #{data.user} on #{data.createdDate}
+    #commentsCount
+    .commentPool
+    #newComment(style='display:none;')
+      textarea#input-commentForm.commentText(cols=80, rows=3, size='80', maxlength='1024', placeholder='Write a comment...') Write a comment...
+      br
+      input.submitContent(type='button', value='Comment')
 footer Blog Footer
+script(src='socket.io/socket.io.js')
+script(src='js/blogComments.js')

@@ -1,19 +1,7 @@
 header
   a(href='/') Blog Title
 #content
-  #login
-    form#loginForm
-      fieldset
-        legend Login
-        ul
-          li
-            label User
-            input#user(type='text', name='user')
-          li
-            label Pass
-            input#pass(type='password', name='pass')
-          li
-            input#authSubmit(type='submit', value='submit')
+  != partial('login')
   #newPost(style='display:none;')
     form#newPostForm
       fieldset
