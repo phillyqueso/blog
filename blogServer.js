@@ -149,7 +149,7 @@ var main = io.of('/main').on('connection', function(client) {
 			    res.title = obj.data.title;
 			res.save(function (err) {
 			    //broadcast change (to all except me)
-			    client.broadcast.emit('updatePost', {'data': res});
+			    main.emit('updatePost', {'data': res});
 			});
 		    } else {
 			console.log("didn't find post to be updated _id:".obj.data.postId);
