@@ -98,7 +98,8 @@ var isAuthed = function(client) {
 }
 
 var main = io.of('/main').on('connection', function(client) {
-    //emit on definitions
+    isAuthed(client);
+
     client.on('auth', function(obj) {
 	auth(obj, client);
     });
