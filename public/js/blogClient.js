@@ -1,8 +1,13 @@
 var socket;
 var user;
+var postQuery = {};
 
 $(document).ready(function() {
     socket = io.connect('/main', {port:8080, connectTimeout:8000});
+
+    var userView = $("#userView").attr('title');
+    if (userView)
+	postQuery.user = userView;
     
     socket.on('loadPosts', function(obj) {
 	for (var i = 0; i < obj.data.length; i++) {
@@ -35,10 +40,6 @@ $(document).ready(function() {
 	// if "load new post" button is hidden, unhide
 	// pass obj.data through loadBlogEntry function
 	loadBlogEntryTop(obj.data);
-	if (user != null && user == obj.data.user) {
-	    var el = $("[postid="+obj.data._id+"]");
-	    makePostEditable(el, obj.data._id);
-	}
     });
 
     socket.on('updatePost', function(obj) {
@@ -50,7 +51,10 @@ $(document).ready(function() {
 	$("[postid="+obj.data._id+"]").remove();
     });
     
-    socket.on('connect', function(){ console.log('Connected'); });
+    socket.on('connect', function(){
+	console.log('Connected');
+	socket.emit("load", postQuery);
+    });
     socket.on('disconnect', function(){ console.log('Disconnected'); });
     socket.on('reconnect', function(){ 
 	$("#blog").html(""); //empty
@@ -88,7 +92,9 @@ $(document).ready(function() {
     $(window).scroll(function(){
         if ($(window).scrollTop() == $(document).height() - $(window).height()) {
 	    var lastId = $(".blogEntry").filter(":last").attr('postid');
-	    socket.emit('moreLoad', {'data': {'postId': lastId}});
+	    curQuery = postQuery;
+	    curQuery.postId = lastId;
+	    socket.emit('load', curQuery);
         }
     });
 
@@ -101,21 +107,30 @@ var strDateToString = function(strDate) {
 function loadBlogEntryTop(post) {
     var dateVar = strDateToString(post.createdDate);
     var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
-<a href='/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
+<a href='/posts/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
 <div id='story'>"+post.story+"</div>\
-<div id='byUser'>by "+post.user+" on "+dateVar+"</div>\
+<div id='byUser'>by <a href='/"+post.user+"'>"+post.user+"</a> on "+dateVar+"</div>\
 </div>";
     $("#blog").prepend(blogEntry);
+    attemptEditable(post);
 }
 
 function loadBlogEntry(post) {
     var dateVar = strDateToString(post.createdDate);
     var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
-<a href='/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
+<a href='/posts/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
 <div id='story'>"+post.story+"</div>\
-<div id='byUser'>by "+post.user+" on "+dateVar+"</div>\
+<div id='byUser'>by <a href='"+post.user+"'>"+post.user+"</a> on "+dateVar+"</div>\
 </div>";
     $("#blog").append(blogEntry);
+    attemptEditable(post);
+}
+
+function attemptEditable(post) {
+    if (user != null && user == post.user) {
+	var el = $("[postid="+post._id+"]");
+	makePostEditable(el, post._id);
+    }
 }
 
 function updateBlogEntry(el, post) {

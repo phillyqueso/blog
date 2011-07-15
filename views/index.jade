@@ -1,5 +1,8 @@
 header
   a(href='/') Blog Title
+  - if (typeof username !== "undefined")
+    /
+    a(id='userView', href='#{username}', title='#{username}')= username
 #content
   != partial('login')
   #newPost(style='display:none;')

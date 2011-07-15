@@ -1,4 +1,5 @@
 const express = require('express'),
+connect = require('connect'),
 app = express.createServer(),
 io = require('socket.io').listen(app),
 mongoose = require('mongoose'),
@@ -36,10 +37,22 @@ app.param('postId', function(req, res, next, id) {
     });
 });
 
-app.get('/:postId', function(req, res) {
+app.get('/posts/:postId', function(req, res) {
     // inject the post into a layout/template
-    console.log(req.post);
     res.render('singlePost', { data: req.post });
+});
+
+app.param('username', function(req, res, next, username) {
+    Users.findOne({'username': username}, function(err, res) {
+	if (err) return next(err);
+	if (!res) return next(new Error('failed to find blog for username: '+username));
+	req.username = username;
+	next();
+    });
+});
+
+app.get('/:username', function(req, res) {
+    res.render('index', { username: req.username });
 });
 
 app.get('/', function(req, res) {
@@ -48,35 +61,13 @@ app.get('/', function(req, res) {
 
 app.listen(8080);
 
-parseCookie = function(str){
-  var obj = {}
-    , pairs = str.split(/[;,] */);
-  for (var i = 0, len = pairs.length; i < len; ++i) {
-    var pair = pairs[i]
-      , eqlIndex = pair.indexOf('=')
-      , key = pair.substr(0, eqlIndex).trim().toLowerCase()
-      , val = pair.substr(++eqlIndex, pair.length).trim();
-
-    // Quoted values
-    if (val[0] === '"') {
-      val = val.slice(1, -1);
-    }
-
-    // Only assign once
-    if (obj[key] === undefined) {
-      obj[key] = decodeURIComponent(val.replace(/\+/g, ' '));
-    }
-  }
-  return obj;
-};
-
 var auth = function(obj, client) {
     Users.findOne({'username': obj.data.user, 'password': obj.data.pass}, function (err,res) {
 	if (res != null) {
 	    client.auth =  { username : res.username, _id : res._id };
 	    if (client.session) {
 		client.session['auth'] = client.auth;
-		storage.set(client.sid, client.session);
+		    storage.set(client.sid, client.session);
 	    }
     	    client.emit('auth', {data: true, user: res.username});
 	} else {
@@ -89,7 +80,7 @@ var auth = function(obj, client) {
 
 var isAuthed = function(client) {
     //check for session/reload of page
-    var clientCookies = parseCookie(client.handshake.headers.cookie);
+    var clientCookies = connect.utils.parseCookie(client.handshake.headers.cookie);
     client.sid = clientCookies['connect.sid'];
     
     storage.get(client.sid, function(err, res) {
@@ -107,14 +98,6 @@ var isAuthed = function(client) {
 }
 
 var main = io.of('/main').on('connection', function(client) {
-    // send last 20 blog posts
-    Posts.find().sort("_id", -1).limit(perPage).execFind(function(err, obj) {
-	if (obj != null) {
-	    client.emit('loadPosts', {data: obj});
-	    isAuthed(client);
-	}
-    });
-
     //emit on definitions
     client.on('auth', function(obj) {
 	auth(obj, client);
@@ -181,8 +164,15 @@ var main = io.of('/main').on('connection', function(client) {
 	}
     });
 
-    client.on('moreLoad', function(obj) {
-	Posts.find({_id: { "$lt": obj.data.postId } }).sort('_id', -1).limit(perPage).execFind(function(err, res) {
+    client.on('load', function(obj) {
+	var q = {};
+	if (obj) {
+	    if (obj.postId)
+		q._id = {"$lt": obj.postId};
+	    if (obj.user)
+		q.user = obj.user;
+	}
+	Posts.find(q).sort('_id', -1).limit(perPage).execFind(function(err, res) {
 	    if (res != null) {
 		client.emit('loadPosts', {data: res});
 	    }

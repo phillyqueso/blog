@@ -5,7 +5,9 @@ header
   .blogEntry(postid='#{data._id}', postuser='#{data.user}')
     #title #{data.title}
     #story!= data.story
-    #byUser by #{data.user} on #{data.createdDate}
+    #byUser by 
+      a(href='/#{data.user}')= data.user 
+      &nbsp;by #{data.createdDate}
     #commentsCount
     .commentPool
     #newComment(style='display:none;')
@@ -13,5 +15,5 @@ header
       br
       input.submitContent(type='button', value='Comment')
 footer Blog Footer
-script(src='socket.io/socket.io.js')
-script(src='js/blogComments.js')
+script(src='/socket.io/socket.io.js')
+script(src='/js/blogComments.js')
