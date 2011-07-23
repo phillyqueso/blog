@@ -112,7 +112,8 @@ var main = io.of('/main').on('connection', function(client) {
 		newPost.save(function(err) {
 		    if (!err) {
 			// broadcast new Post to all connected clients
-			main.emit('newPost', {data: newPost});
+			main.in(obj.data.user).emit('newPost', {data: newPost});
+			main.in('main').emit('newPost', {data: newPost});
 		    }
 		});
 	    } else {
@@ -133,7 +134,8 @@ var main = io.of('/main').on('connection', function(client) {
 			    res.title = obj.data.title;
 			res.save(function (err) {
 			    //broadcast change (to all except me)
-			    main.emit('updatePost', {'data': res});
+			    main.in(obj.data.user).emit('updatePost', {'data': res});
+			    main.in('main').emit('updatePost', {'data': res});
 			});
 		    } else {
 			console.log("didn't find post to be updated _id:".obj.data.postId);
@@ -153,7 +155,8 @@ var main = io.of('/main').on('connection', function(client) {
 			res.remove();
 			res.save(function(err) {
 			    //broadcast delete
-			    main.emit('deletePost', {'data': {'_id': obj.data.postId}});
+			    main.in(obj.data.user).emit('deletePost', {'data': {'_id': obj.data.postId}});
+			    main.in('main').emit('deletePost', {'data': {'_id': obj.data.postId}});
 			});
 		    } else {
 			console.log("didn't find post to be deleted _id:".obj.data.postId);
@@ -170,8 +173,14 @@ var main = io.of('/main').on('connection', function(client) {
 	if (obj) {
 	    if (obj.postId)
 		q._id = {"$lt": obj.postId};
-	    if (obj.user)
+	    if (obj.user) {
 		q.user = obj.user;
+		client.room = obj.user;
+	    } else {
+		client.room = 'main';
+	    }
+	    client.join(client.room);
+
 	}
 	Posts.find(q).sort('_id', -1).limit(perPage).execFind(function(err, res) {
 	    if (res != null) {
