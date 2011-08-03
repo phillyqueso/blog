@@ -1,6 +1,8 @@
 const express = require('express'),
 connect = require('connect'),
+form = require('connect-form'),
 app = express.createServer(),
+fs = require('fs'),
 io = require('socket.io').listen(app),
 mongoose = require('mongoose'),
 db = mongoose.connect('mongodb://localhost/blog');
@@ -19,8 +21,9 @@ app.configure(function() {
     app.set('view engine', 'jade');
     app.set('views', __dirname + '/views');
     app.use(express.logger());
-    app.use(express.methodOverride());
     app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(form({ keepExtensions: true, uploadDir: __dirname + '/public/uploads/' }));
     app.use(express.cookieParser());
     app.use(express.session({ store: storage, secret: "p1ngp0ng" }));
     app.use(app.router);
@@ -39,8 +42,76 @@ app.param('postId', function(req, res, next, id) {
 
 app.get('/posts/:postId', function(req, res) {
     // inject the post into a layout/template
+    console.log("got to: get/posts/postId");
     res.render('singlePost', { data: req.post });
 });
+
+app.get('/upload', function(req, res) {
+    console.log("got to: get/upload");
+    res.contentType('json');
+    jsonRes = {"success" : false, "data" : {} };
+    if (req.session.auth != null) {
+	jsonRes.success = true;
+	switch (req.param("action")) {
+	case 'auth':
+	    jsonRes.data = { 
+		"move": {
+		    "enabled": false,
+		},
+		"rename": {
+		    "enabled": false,
+		},
+		"remove":  {
+		    "enabled": false,
+		},
+		"mkdir":  {
+		    "enabled": false,
+		},
+		"upload": {
+		    "enabled": true,
+		    "handler": "/upload",
+		    "accept_ext": [".png",".jpeg",".jpg",".gif"]
+		}
+	    }
+	    res.send(JSON.stringify(jsonRes));
+	    break;
+	case 'list':
+	    jsonRes.data = {"files" : {}, "directories" : {} };
+	    fs.readdir(__dirname + '/public/uploads/', function(err, files) {
+		if (err) throw err;
+		console.log("files: "+files);
+		files.forEach(function(file) {
+		    jsonRes.data.files[file] = 'http://' + req.header('host') + '/uploads/' + file;
+		});
+		res.send(JSON.stringify(jsonRes));
+	    });
+	    break;
+	}
+    } else {
+	res.send(JSON.stringify(jsonRes));
+    }
+});
+
+app.post('/upload', function(req, res, next) {
+    console.log("got to: post/upload");
+    req.form.complete(function(err, fields, files) {
+	if (err) {
+	    console.log("up error: "+err);
+	    next(err);
+	} else {
+	    res.send("Upload complete.");
+	}
+    });
+
+    req.form.on('progress', function(bytesReceived, bytesExpected) {
+	console.log("progress");
+	var percent = (bytesReceived / bytesExpected * 100) | 0;
+	process.stdout.write('Uploading: %' + percent + '\r');
+    });
+
+});
+
+
 
 app.param('username', function(req, res, next, username) {
     Users.findOne({'username': username}, function(err, res) {
@@ -52,10 +123,12 @@ app.param('username', function(req, res, next, username) {
 });
 
 app.get('/:username', function(req, res) {
+    console.log("got to: username");
     res.render('index', { username: req.username });
 });
 
 app.get('/', function(req, res) {
+    console.log("got to: root");
     res.render('index');
 });
 

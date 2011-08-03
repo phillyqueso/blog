@@ -88,6 +88,8 @@ $(document).ready(function() {
 
     $("#story").wysiwyg({initialContent: ""});
 
+    $.wysiwyg.fileManager.setAjaxHandler("/upload");
+
     //once you reach the bottom of the page, load more posts (if there are any)
     $(window).scroll(function(){
         if ($(window).scrollTop() == $(document).height() - $(window).height()) {
