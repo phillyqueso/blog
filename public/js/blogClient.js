@@ -57,8 +57,9 @@ $(document).ready(function() {
     });
     socket.on('disconnect', function(){ console.log('Disconnected'); });
     socket.on('reconnect', function(){ 
-	$("#blog").html(""); //empty
 	console.log('Reconnected to server');
+	$("#blog").html(""); //empty
+	socket.emit("load", postQuery);
     });
     socket.on('reconnecting', function( nextRetry ){ console.log('Attempting to re-connect to the server, next attempt in ' + nextRetry + 'ms'); });
     socket.on('reconnect_failed', function(){ console.log('Reconnected to server FAILED.'); });
