@@ -77,12 +77,21 @@ app.get('/upload', function(req, res) {
 	    break;
 	case 'list':
 	    jsonRes.data = {"files" : {}, "directories" : {} };
-	    fs.readdir(__dirname + '/public/uploads/', function(err, files) {
-		if (err) throw err;
-		console.log("files: "+files);
-		files.forEach(function(file) {
-		    jsonRes.data.files[file] = 'http://' + req.header('host') + '/uploads/' + file;
-		});
+
+	    var finalDir = __dirname + '/public/uploads/' + req.session.auth.username + '/';
+	    fs.readdir(finalDir, function(err, files) {
+		if (err) {
+		    fs.mkdir(finalDir, 0777, function(err) {
+			if (err) {
+			    console.log(err);
+			    throw err;
+			}
+		    });
+		} else {
+		    files.forEach(function(file) {
+			jsonRes.data.files[file] = 'http://' + req.header('host') + '/uploads/' + req.session.auth.username + '/' + file;
+		    });
+		}
 		res.send(JSON.stringify(jsonRes));
 	    });
 	    break;
@@ -94,21 +103,31 @@ app.get('/upload', function(req, res) {
 
 app.post('/upload', function(req, res, next) {
     console.log("got to: post/upload");
-    req.form.complete(function(err, fields, files) {
-	if (err) {
-	    console.log("up error: "+err);
-	    next(err);
-	} else {
-	    res.send("Upload complete.");
-	}
-    });
-
-    req.form.on('progress', function(bytesReceived, bytesExpected) {
-	console.log("progress");
-	var percent = (bytesReceived / bytesExpected * 100) | 0;
-	process.stdout.write('Uploading: %' + percent + '\r');
-    });
-
+    if (req.session.auth != null) {
+	var finalDir = __dirname + '/public/uploads/' + req.session.auth.username + '/';
+	req.form.complete(function(err, fields, files) {
+	    if (err) {
+		console.log("up error: "+err);
+		next(err);
+	    } else {
+		fs.rename(files.handle.path, finalDir + files.handle.name, function(err) {
+		    if (err) {
+			console.log(err);
+			res.send("problem uploading file");
+		    }
+		    res.send("Upload complete.");
+		});
+	    }
+	});
+	
+	req.form.on('progress', function(bytesReceived, bytesExpected) {
+	    console.log("progress");
+	    var percent = (bytesReceived / bytesExpected * 100) | 0;
+	    process.stdout.write('Uploading: %' + percent + '\r');
+	});
+    } else {
+	next("Can't upload filed without being logged in.");
+    }
 });
 
 
