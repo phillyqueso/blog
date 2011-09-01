@@ -20,6 +20,7 @@ const perPage = 10;
 app.configure(function() {
     app.set('view engine', 'jade');
     app.set('views', __dirname + '/views');
+    app.use(express.favicon());
     app.use(express.logger());
     app.use(express.bodyParser());
     app.use(express.methodOverride());

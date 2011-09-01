@@ -1,0 +1,21 @@
+{
+  "author": "phillyqueso <pjacobs@xeekr.com> (http://xeekr.com/~pjacobs/)",
+  "name": "blog",
+  "description": "multi-user blog system",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/phillyqueso/blog.git"
+  },
+  "engines": {
+    "node": "~v0.4.10"
+  },
+  "dependencies": {
+    "connect": "~>1.6.4",
+    "connect-form": "~>0.2.1",
+    "express": "~>2.4.6",
+    "jade": "~>0.12.4",
+    "mongoose": "~>1.5.0",
+    "socket.io": "~>0.7.11"
+    }
+}
