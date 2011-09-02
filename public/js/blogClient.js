@@ -182,10 +182,13 @@ function makePostEditable(el, postId) {
 	    return(value);
     }, {type: 'textarea', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
 
+    var storyFieldType = 'textarea';
+    if (ismobile) storyFieldType = 'jwysiwyg';
+
     $(el).find("#story").editable(function(value, setting) {
 	    if (value != null) {
 	        socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'story': value}});
 	    }
 	    return(value);
-    }, {type: 'jwysiwyg', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
+    }, {type: storyFieldType, submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
 }
