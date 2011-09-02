@@ -2,6 +2,8 @@ var socket;
 var user;
 var postQuery = {};
 
+var ismobile = navigator.userAgent.match(/(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i); //check if a mobile device hit
+
 $(document).ready(function() {
     socket = io.connect('/main');
 
@@ -91,13 +93,20 @@ $(document).ready(function() {
 	    var story = $("#story").val();
 	    
 	    $("#title").val('');
-	    $("#story").wysiwyg("setContent", "");
+
+        if (ismobile)
+            $("#story").val('');
+        else
+	        $("#story").wysiwyg("setContent", "");
         
 	    socket.emit('newPost', {data: {user: user, title: title, story: story}});
 	    return false;
     });
     
-    $("#story").wysiwyg({initialContent: ""});
+    if (!ismobile) {
+        $("#story").wysiwyg({initialContent: ""});
+    }
+
     
     $.wysiwyg.fileManager.setAjaxHandler("/upload");
     
