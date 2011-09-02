@@ -4,6 +4,7 @@ form = require('connect-form'),
 app = express.createServer(),
 fs = require('fs'),
 io = require('socket.io').listen(app),
+config = require('./config.js').config,
 mongoose = require('mongoose'),
 db = mongoose.connect('mongodb://localhost/blog');
 
@@ -15,7 +16,7 @@ var posts = require(__dirname + '/models/posts.js');
 var Users = mongoose.model('users');
 var Posts = mongoose.model('posts');
 
-const perPage = 10;
+const perPage = config.pageSize;
 
 app.configure(function() {
     app.set('view engine', 'jade');
@@ -26,25 +27,32 @@ app.configure(function() {
     app.use(express.methodOverride());
     app.use(form({ keepExtensions: true, uploadDir: __dirname + '/public/uploads/' }));
     app.use(express.cookieParser());
-    app.use(express.session({ store: storage, secret: "p1ngp0ng" }));
+    app.use(express.session({ store: storage, secret: config.sessionSecret }));
     app.use(app.router);
     app.use(express.static(__dirname + '/public'));
-    app.use(express.errorHandler());
+});
+
+app.configure('development', function(){
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
+});
+
+app.configure('production', function(){
+  app.use(express.errorHandler()); 
 });
 
 app.param('postId', function(req, res, next, id) {
     Posts.findById(id, function(err, res) {
-	if (err) return next(err);
-	if (!res) return next(new Error('failed to find post'));
-	req.post = res;
-	next();
+	    if (err) return next(err);
+	    if (!res) return next(new Error('failed to find post'));
+	    req.post = res;
+	    next();
     });
 });
 
 app.get('/posts/:postId', function(req, res) {
     // inject the post into a layout/template
     console.log("got to: get/posts/postId");
-    res.render('singlePost', { data: req.post });
+    res.render('singlePost', { config: config.clientConfig, data: req.post });
 });
 
 app.get('/upload', function(req, res) {
@@ -52,82 +60,82 @@ app.get('/upload', function(req, res) {
     res.contentType('json');
     jsonRes = {"success" : false, "data" : {} };
     if (req.session.auth != null) {
-	jsonRes.success = true;
-	switch (req.param("action")) {
-	case 'auth':
-	    jsonRes.data = { 
-		"move": {
-		    "enabled": false,
-		},
-		"rename": {
-		    "enabled": false,
-		},
-		"remove":  {
-		    "enabled": false,
-		},
-		"mkdir":  {
-		    "enabled": false,
-		},
-		"upload": {
-		    "enabled": true,
-		    "handler": "/upload",
-		    "accept_ext": [".png",".jpeg",".jpg",".gif"]
-		}
+	    jsonRes.success = true;
+	    switch (req.param("action")) {
+	    case 'auth':
+	        jsonRes.data = { 
+		        "move": {
+		            "enabled": false,
+		        },
+		        "rename": {
+		            "enabled": false,
+		        },
+		        "remove":  {
+		            "enabled": false,
+		        },
+		        "mkdir":  {
+		            "enabled": false,
+		        },
+		        "upload": {
+		            "enabled": true,
+		            "handler": "/upload",
+		            "accept_ext": [".png",".jpeg",".jpg",".gif"]
+		        }
+	        }
+	        res.send(JSON.stringify(jsonRes));
+	        break;
+	    case 'list':
+	        jsonRes.data = {"files" : {}, "directories" : {} };
+            
+	        var finalDir = __dirname + '/public/uploads/' + req.session.auth.username + '/';
+	        fs.readdir(finalDir, function(err, files) {
+		        if (err) {
+		            fs.mkdir(finalDir, 0777, function(err) {
+			            if (err) {
+			                console.log(err);
+			                throw err;
+			            }
+		            });
+		        } else {
+		            files.forEach(function(file) {
+			            jsonRes.data.files[file] = 'http://' + req.header('host') + '/uploads/' + req.session.auth.username + '/' + file;
+		            });
+		        }
+		        res.send(JSON.stringify(jsonRes));
+	        });
+	        break;
 	    }
-	    res.send(JSON.stringify(jsonRes));
-	    break;
-	case 'list':
-	    jsonRes.data = {"files" : {}, "directories" : {} };
-
-	    var finalDir = __dirname + '/public/uploads/' + req.session.auth.username + '/';
-	    fs.readdir(finalDir, function(err, files) {
-		if (err) {
-		    fs.mkdir(finalDir, 0777, function(err) {
-			if (err) {
-			    console.log(err);
-			    throw err;
-			}
-		    });
-		} else {
-		    files.forEach(function(file) {
-			jsonRes.data.files[file] = 'http://' + req.header('host') + '/uploads/' + req.session.auth.username + '/' + file;
-		    });
-		}
-		res.send(JSON.stringify(jsonRes));
-	    });
-	    break;
-	}
     } else {
-	res.send(JSON.stringify(jsonRes));
+	    res.send(JSON.stringify(jsonRes));
     }
 });
 
 app.post('/upload', function(req, res, next) {
     console.log("got to: post/upload");
     if (req.session.auth != null) {
-	var finalDir = __dirname + '/public/uploads/' + req.session.auth.username + '/';
-	req.form.complete(function(err, fields, files) {
-	    if (err) {
-		console.log("up error: "+err);
-		next(err);
-	    } else {
-		fs.rename(files.handle.path, finalDir + files.handle.name, function(err) {
-		    if (err) {
-			console.log(err);
-			res.send("problem uploading file");
-		    }
-		    res.send("Upload complete.");
-		});
-	    }
-	});
-	
-	req.form.on('progress', function(bytesReceived, bytesExpected) {
-	    console.log("progress");
-	    var percent = (bytesReceived / bytesExpected * 100) | 0;
-	    process.stdout.write('Uploading: %' + percent + '\r');
-	});
+	    var finalDir = __dirname + '/public/uploads/' + req.session.auth.username + '/';
+	    req.form.complete(function(err, fields, files) {
+	        if (err) {
+		        console.log("up error: "+err);
+		        next(err);
+	        } else {
+		        fs.rename(files.handle.path, finalDir + files.handle.name, function(err) {
+		            if (err) {
+			            console.log(err);
+			            res.send("problem uploading file");
+		            }
+		            res.send("Upload complete.");
+		        });
+	        }
+	    });
+	    
+	    req.form.on('progress', function(bytesReceived, bytesExpected) {
+	        console.log("progress");
+	        var percent = (bytesReceived / bytesExpected * 100) | 0;
+	        process.stdout.write('Uploading: %' + percent + '\r');
+	    });
     } else {
-	next("Can't upload filed without being logged in.");
+	    next("Can't upload filed without being logged in.");
     }
 });
 
@@ -135,24 +143,24 @@ app.post('/upload', function(req, res, next) {
 
 app.param('username', function(req, res, next, username) {
     Users.findOne({'username': username}, function(err, res) {
-	if (err) return next(err);
-	if (!res) return next(new Error('failed to find blog for username: '+username));
-	req.username = username;
-	next();
+	    if (err) return next(err);
+	    if (!res) return next(new Error('failed to find blog for username: '+username));
+	    req.username = username;
+	    next();
     });
 });
 
 app.get('/:username', function(req, res) {
     console.log("got to: username");
-    res.render('index', { username: req.username });
+    res.render('index', { config: config.clientConfig,  username: req.username });
 });
 
 app.get('/', function(req, res) {
     console.log("got to: root");
-    res.render('index');
+    res.render('index', { config: config.clientConfig });
 });
 
-app.listen(8080);
+app.listen(config.port);
 
 var auth = function(obj, client) {
     Users.findOne({'username': obj.data.user, 'password': obj.data.pass}, function (err,res) {

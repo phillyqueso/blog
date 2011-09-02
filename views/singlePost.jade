@@ -1,5 +1,5 @@
 header
-  a(href='/') Blog Title
+  a(href='/') #{config.blogName}
 != partial('login')
 #blog
   .blogEntry(postid='#{data._id}', postuser='#{data.user}')
@@ -14,6 +14,6 @@ header
       textarea#input-commentForm.commentText(cols=80, rows=3, size='80', maxlength='1024', placeholder='Write a comment...') Write a comment...
       br
       input.submitContent(type='button', value='Comment')
-footer Blog Footer
+footer #{config.blogFooter}
 script(src='/socket.io/socket.io.js')
 script(src='/js/blogComments.js')

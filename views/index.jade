@@ -1,5 +1,5 @@
 header
-  a(href='/') Blog Title
+  a(href='/') #{config.blogName}
   - if (typeof username !== "undefined")
     /
     a(id='userView', href='#{username}', title='#{username}')= username
@@ -19,6 +19,6 @@ header
           li
             input#postSubmit(type='submit', value='Submit')
 #blog
-footer Blog Footer
+footer #{config.blogFooter}
 script(src='socket.io/socket.io.js')
 script(src='js/blogClient.js')
