@@ -120,7 +120,7 @@ var strDateToString = function(strDate) {
 function loadBlogEntryTop(post) {
     var dateVar = strDateToString(post.createdDate);
     var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
-<a href='/posts/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
+<div><a href='/posts/"+post._id+"'><span id='title'>"+post.title+"</span></a></div>\
 <div id='story'>"+post.story+"</div>\
 <div id='byUser'>by <a href='/"+post.user+"'>"+post.user+"</a> on "+dateVar+"</div>\
 </div>";
@@ -131,7 +131,7 @@ function loadBlogEntryTop(post) {
 function loadBlogEntry(post) {
     var dateVar = strDateToString(post.createdDate);
     var blogEntry = "<div class='blogEntry' postid='"+post._id+"' postuser='"+post.user+"'>\
-<a href='/posts/"+post._id+"'><div id='title'>"+post.title+"</div></a>\
+<div><a href='/posts/"+post._id+"'><span id='title'>"+post.title+"</span></a></div>\
 <div id='story'>"+post.story+"</div>\
 <div id='byUser'>by <a href='"+post.user+"'>"+post.user+"</a> on "+dateVar+"</div>\
 </div>";
@@ -161,15 +161,17 @@ function makePostEditable(el, postId) {
     });
     $(el).css('border-color', 'orange'); //indicate editable
     
-    //@todo: find solution to editable link
-    //$(el).find("#title").parent().prepend("(link)");
-    
+    var titleLink = $(el).find("#title").parent();
+    titleLink.after($(el).find("#title"));
+    titleLink.html('(link)');
+        
     $(el).find("#title").editable(function(value, setting) {
 	    if (value != null) {
 	        socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'title': value}});
 	    }
 	    return(value);
     }, {type: 'textarea', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
+
     $(el).find("#story").editable(function(value, setting) {
 	    if (value != null) {
 	        socket.emit('updatePost', {'data': {'user': user, 'postId': postId, 'story': value}});

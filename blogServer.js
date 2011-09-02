@@ -325,42 +325,42 @@ var comments = io.of('/comments').on('connection', function(client) {
     isAuthed(client);
 
     client.on('auth', function(obj) {
-	auth(obj, client);
+	    auth(obj, client);
     });
-
+    
     client.on('getComments', function(obj) {
-	if (obj.postId != null) {
-	    client.join(obj.postId);
-	    Posts.findById(obj.postId, function(err, res) {
-		if (!err && res && res.comments) {
-		    client.emit('loadComments', res.comments);
+	    if (obj.postId != null) {
+	        client.join(obj.postId);
+	        Posts.findById(obj.postId, function(err, res) {
+		        if (!err && res && res.comments) {
+		            client.emit('loadComments', res.comments);
 		} else {
 		    console.log(err);
 		}
-	    });
-	}
-    });
-
-    client.on('newComment', function(obj) {
-	Posts.findById(obj.postId, function(err, res) {
-	    if (!err && res) {
-		var commentData = {user: client.auth.username, comment: obj.comment};
-		res.comments.push(commentData);
-		res.save(function(err) {
-		    if (!err) {
-			comments.in(obj.postId).emit('loadComments', [commentData]);
-		    } else {
-			console.log(err);
-		    }
-		});
+	        });
 	    }
-	});
     });
-
+    
+    client.on('newComment', function(obj) {
+	    Posts.findById(obj.postId, function(err, res) {
+	        if (!err && res) {
+		        var commentData = {user: client.auth.username, comment: obj.comment};
+		        res.comments.push(commentData);
+		        res.save(function(err) {
+		            if (!err) {
+			            comments.in(obj.postId).emit('loadComments', [commentData]);
+		            } else {
+			            console.log(err);
+		            }
+		        });
+	        }
+	    });
+    });
+    
     client.on('updateComment', function(obj) {
     });
-
+    
     client.on('deleteComment', function(obj) {
     });
-
+    
 });

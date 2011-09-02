@@ -33,6 +33,7 @@ footer {
 #title {
     font-size: larger;
     font-weight: bold;
+    padding: 6px;
 }
 
 #byUser {
