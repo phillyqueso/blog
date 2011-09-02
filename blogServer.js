@@ -33,25 +33,32 @@ app.configure(function() {
 });
 
 app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
+    app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
 });
 
 app.configure('production', function(){
-  app.use(express.errorHandler()); 
+    app.use(express.errorHandler()); 
 });
 
 app.param('postId', function(req, res, next, id) {
-    Posts.findById(id, function(err, res) {
-	    if (err) return next(err);
-	    if (!res) return next(new Error('failed to find post'));
-	    req.post = res;
-	    next();
-    });
+    if (config.contentProtection == true && !req.session.auth) {
+        req.post = false;
+        next();
+    } else {
+        Posts.findById(id, function(err, res) {
+	        if (err) return next(err);
+	        if (!res) return next(new Error('failed to find post'));
+	        req.post = res;
+            next();
+        });
+    }
 });
+
 
 app.get('/posts/:postId', function(req, res) {
     // inject the post into a layout/template
     console.log("got to: get/posts/postId");
+    if (req.post == false) return res.redirect('/');
     res.render('singlePost', { config: config.clientConfig, data: req.post });
 });
 
@@ -142,17 +149,25 @@ app.post('/upload', function(req, res, next) {
 
 
 app.param('username', function(req, res, next, username) {
-    Users.findOne({'username': username}, function(err, res) {
-	    if (err) return next(err);
-	    if (!res) return next(new Error('failed to find blog for username: '+username));
-	    req.username = username;
-	    next();
-    });
+    if (config.contentProtection == true && !req.session.auth) {
+        req.username = false;
+        next();
+    } else {
+        Users.findOne({'username': username}, function(err, res) {
+	        if (err) return next(err);
+	        if (!res) return next(new Error('failed to find blog for username: '+username));
+	        req.username = username;
+	        next();
+        });
+    }
 });
 
 app.get('/:username', function(req, res) {
     console.log("got to: username");
-    res.render('index', { config: config.clientConfig,  username: req.username });
+    if (req.username == false)
+        res.redirect('/');
+    else
+        res.render('index', { config: config.clientConfig,  username: req.username });
 });
 
 app.get('/', function(req, res) {
@@ -164,18 +179,28 @@ app.listen(config.port);
 
 var auth = function(obj, client) {
     Users.findOne({'username': obj.data.user, 'password': obj.data.pass}, function (err,res) {
-	if (res != null) {
-	    client.auth =  { username : res.username, _id : res._id };
-	    if (client.session) {
-		client.session['auth'] = client.auth;
-		    storage.set(client.sid, client.session);
-	    }
+	    if (res != null) {
+	        client.auth =  { username : res.username, _id : res._id };
+	        if (client.session) {
+		        client.session['auth'] = client.auth;
+		        storage.set(client.sid, client.session);
+	        }
+
     	    client.emit('auth', {data: true, user: res.username});
-	} else {
-	    console.log(err);
-	    console.log("failed attempt: u/p: "+obj.data.user+" "+obj.data.pass);
-	    client.emit('auth', {data: false});
-	}
+
+            if (config.contentProtection == true) { // if content protection is on, emit stories at auth success;
+                Posts.find({}).sort('_id', -1).limit(perPage).execFind(function(err, res) {
+	                if (res != null) {
+		                client.emit('loadPosts', {data: res});
+	                }
+	            })
+            }
+
+	    } else {
+	        console.log(err);
+	        console.log("failed attempt: u/p: "+obj.data.user+" "+obj.data.pass);
+	        client.emit('auth', {data: false});
+	    }
     });
 }
 
@@ -185,16 +210,16 @@ var isAuthed = function(client) {
     client.sid = clientCookies['connect.sid'];
     
     storage.get(client.sid, function(err, res) {
-	if (res != null) {
-	    client.session = res;
-	    if (res.auth != null) {
-		client.auth = res.auth;
-		console.log("recognized user: " + res.auth.username);
-		client.emit('auth', {data: true, user: res.auth.username});
+	    if (res != null) {
+	        client.session = res;
+	        if (res.auth != null) {
+		        client.auth = res.auth;
+		        console.log("recognized user: " + res.auth.username);
+		        client.emit('auth', {data: true, user: res.auth.username});
+	        }
+	    } else {
+	        console.log(res+" sessions missed...");
 	    }
-	} else {
-	    console.log(res+" sessions missed...");
-	}
     });	    
 }
 
@@ -202,92 +227,96 @@ var main = io.of('/main').on('connection', function(client) {
     isAuthed(client);
 
     client.on('auth', function(obj) {
-	auth(obj, client);
+	    auth(obj, client);
     });
-
+    
     client.on('newPost', function(obj) {
-	if (client.auth != null) {
-	    if (client.auth.username == obj.data.user) {
-		obj.data.comments = {};
-		var newPost = new Posts(obj.data);
-		newPost.save(function(err) {
-		    if (!err) {
-			// broadcast new Post to all connected clients
-			main.in(obj.data.user).emit('newPost', {data: newPost});
-			main.in('main').emit('newPost', {data: newPost});
-		    }
-		});
-	    } else {
-		console.log("attempt to post without being logged in... Or as the wrong user...");
+	    if (client.auth != null) {
+	        if (client.auth.username == obj.data.user) {
+		        obj.data.comments = {};
+		        var newPost = new Posts(obj.data);
+		        newPost.save(function(err) {
+		            if (!err) {
+			            // broadcast new Post to all connected clients
+			            main.in(obj.data.user).emit('newPost', {data: newPost});
+			            main.in('main').emit('newPost', {data: newPost});
+		            }
+		        });
+	        } else {
+		        console.log("attempt to post without being logged in... Or as the wrong user...");
+	        }
 	    }
-	}
     });
     
     client.on('updatePost', function(obj) {
-	if (client.auth != null) {
-	    if (client.auth.username == obj.data.user) {
-		Posts.findOne({user: client.auth.username, _id: obj.data.postId}, function(err, res) {
-		    if (!err) {
-			//perform update
-			if (obj.data.story != null)
-			    res.story = obj.data.story;
-			if (obj.data.title != null)
-			    res.title = obj.data.title;
-			res.save(function (err) {
-			    //broadcast change (to all except me)
-			    main.in(obj.data.user).emit('updatePost', {'data': res});
-			    main.in('main').emit('updatePost', {'data': res});
-			});
-		    } else {
-			console.log("didn't find post to be updated _id:".obj.data.postId);
-		    }
-		});
-	    } else {
-		console.log("not logged in. Cannot update.");
+	    if (client.auth != null) {
+	        if (client.auth.username == obj.data.user) {
+		        Posts.findOne({user: client.auth.username, _id: obj.data.postId}, function(err, res) {
+		            if (!err) {
+			            //perform update
+			            if (obj.data.story != null)
+			                res.story = obj.data.story;
+			            if (obj.data.title != null)
+			                res.title = obj.data.title;
+			            res.save(function (err) {
+			                //broadcast change (to all except me)
+			                main.in(obj.data.user).emit('updatePost', {'data': res});
+			                main.in('main').emit('updatePost', {'data': res});
+			            });
+		            } else {
+			            console.log("didn't find post to be updated _id:".obj.data.postId);
+		            }
+		        });
+	        } else {
+		        console.log("not logged in. Cannot update.");
+	        }
 	    }
-	}
     });
 
     client.on('deletePost', function(obj) {
-	if (client.auth != null) {
-	    if (client.auth.username == obj.data.user) {
-		Posts.findOne({user: client.auth.username, _id: obj.data.postId}, function(err, res) {
-		    if (!err) {
-			res.remove();
-			res.save(function(err) {
-			    //broadcast delete
-			    main.in(obj.data.user).emit('deletePost', {'data': {'_id': obj.data.postId}});
-			    main.in('main').emit('deletePost', {'data': {'_id': obj.data.postId}});
-			});
-		    } else {
-			console.log("didn't find post to be deleted _id:".obj.data.postId);
-		    }
-		});
-	    } else {
-		console.log("not logged in. Cannot delete post.");
+	    if (client.auth != null) {
+	        if (client.auth.username == obj.data.user) {
+		        Posts.findOne({user: client.auth.username, _id: obj.data.postId}, function(err, res) {
+		            if (!err) {
+			            res.remove();
+			            res.save(function(err) {
+			                //broadcast delete
+			                main.in(obj.data.user).emit('deletePost', {'data': {'_id': obj.data.postId}});
+			                main.in('main').emit('deletePost', {'data': {'_id': obj.data.postId}});
+			            });
+		            } else {
+			            console.log("didn't find post to be deleted _id:".obj.data.postId);
+		            }
+		        });
+	        } else {
+		        console.log("not logged in. Cannot delete post.");
+	        }
 	    }
-	}
     });
 
     client.on('load', function(obj) {
-	var q = {};
-	if (obj) {
-	    if (obj.postId)
-		q._id = {"$lt": obj.postId};
-	    if (obj.user) {
-		q.user = obj.user;
-		client.room = obj.user;
-	    } else {
-		client.room = 'main';
-	    }
-	    client.join(client.room);
-
-	}
-	Posts.find(q).sort('_id', -1).limit(perPage).execFind(function(err, res) {
-	    if (res != null) {
-		client.emit('loadPosts', {data: res});
-	    }
-	});
+        if (config.contentProtection == true && !client.auth) {
+            // do nothing
+        } else {
+	        var q = {};
+	        if (obj) {
+	            if (obj.postId)
+		            q._id = {"$lt": obj.postId};
+	            if (obj.user) {
+		            q.user = obj.user;
+		            client.room = obj.user;
+	            } else {
+		            client.room = 'main';
+	        }
+	            client.join(client.room);
+                
+	        }
+	        Posts.find(q).sort('_id', -1).limit(perPage).execFind(function(err, res) {
+	            if (res != null) {
+		            client.emit('loadPosts', {data: res});
+	            }
+	        });
+        }
     });
 
 });
