@@ -344,15 +344,19 @@ var comments = io.of('/comments').on('connection', function(client) {
     client.on('newComment', function(obj) {
 	    Posts.findById(obj.postId, function(err, res) {
 	        if (!err && res) {
-		        var commentData = {user: client.auth.username, comment: obj.comment};
-		        res.comments.push(commentData);
-		        res.save(function(err) {
-		            if (!err) {
-			            comments.in(obj.postId).emit('loadComments', [commentData]);
-		            } else {
-			            console.log(err);
-		            }
-		        });
+                if (res.canComment == false) {
+                    console.log('attempting to comment on content that cannot be commented on');
+                } else {
+		            var commentData = {user: client.auth.username, comment: obj.comment};
+		            res.comments.push(commentData);
+		            res.save(function(err) {
+		                if (!err) {
+			                comments.in(obj.postId).emit('loadComments', [commentData]);
+		                } else {
+			                console.log(err);
+		                }
+		            });
+                }
 	        }
 	    });
     });

@@ -14,7 +14,11 @@ header
             label Title
               input#title(type='text', name='title')
           li
-            label Story
+            - if (config.commentsToggle)
+                #commentsToggle
+                    label(for='commentsToggle') Comments?
+                    input#commentBool(type='checkbox', name='commentsToggle', value=true, CHECKED)
+            label(for='story') Story
             textarea#story(name='story', cols='80', rows='10')
           li
             input#postSubmit(type='submit', value='Submit')

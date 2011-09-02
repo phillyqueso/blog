@@ -11,6 +11,7 @@ var postsSchema = new Schema({
     user : { type: String },
     title : { type: String },
     story : { type: String },
+    canComment: { type: Boolean },
     createdDate : { type: Date, default: Date.now },
     comments: [commentsSchema]
 });

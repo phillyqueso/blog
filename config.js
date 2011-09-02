@@ -15,9 +15,9 @@ var config = {
     all : {
         clientConfig: {
             blogName: 'Xeekr Blog',
-            blogFooter: 'Footer here...' // for something more custom; replace #{config.blogFooter} in the views
+            blogFooter: 'Footer here...', // for something more custom; replace #{config.blogFooter} in the views
+            commentsToggle: true, // allows users to turn comments on/off for their content
         },
-        commentsToggle: true, // allows users to turn comments on/off for their content
         contentProtection: false, // true if auth required to view content.
         pageSize: 10,
         sessionSecret: 'p1ngp0ng'

@@ -91,6 +91,7 @@ $(document).ready(function() {
     $("#newPostForm").submit(function() {
 	    var title = $("#title").val();
 	    var story = $("#story").val();
+        var commentsToggle = ($('#commentBool').attr('checked')) ? true : false;
 	    
 	    $("#title").val('');
 
@@ -99,7 +100,7 @@ $(document).ready(function() {
         else
 	        $("#story").wysiwyg("setContent", "");
         
-	    socket.emit('newPost', {data: {user: user, title: title, story: story}});
+	    socket.emit('newPost', {data: {user: user, title: title, story: story, canComment: commentsToggle }});
 	    return false;
     });
     

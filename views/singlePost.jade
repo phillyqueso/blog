@@ -10,10 +10,11 @@ header
       &nbsp;by #{data.createdDate}
     #commentsCount
     .commentPool
-    #newComment(style='display:none;')
-      textarea#input-commentForm.commentText(cols=80, rows=3, size='80', maxlength='1024', placeholder='Write a comment...') Write a comment...
-      br
-      input.submitContent(type='button', value='Comment')
+    - if (data.canComment)
+        #newComment(style='display:none;')
+          textarea#input-commentForm.commentText(cols=80, rows=3, size='80', maxlength='1024', placeholder='Write a comment...') Write a comment...
+        br
+        input.submitContent(type='button', value='Comment')
 footer #{config.blogFooter}
 script(src='/socket.io/socket.io.js')
 script(src='/js/blogComments.js')

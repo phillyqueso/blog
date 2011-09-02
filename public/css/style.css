@@ -10,6 +10,14 @@ footer {
     background-color: #aaeeaa;
 }
 
+#newPost {
+    width: 60%;
+}
+
+#story {
+    width: 100%;
+}
+
 .blogEntry {
     margin-top: 10px;
     margin-bottom:10px;
@@ -28,6 +36,10 @@ footer {
     margin-top: 5px;
     font-size: smaller;
     font-weight: bold;
+}
+
+#commentsToggle {
+    float: right;
 }
 
 #title {

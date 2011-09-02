@@ -23,7 +23,8 @@ $(document).ready(function() {
 	        // hide login form
 	        $("#login").css('display', 'none');
 	        // allow commenting
-	        $("#newComment").css('display', 'block');
+            if ($("newComment"))
+	            $("#newComment").css('display', 'block');
 	    } else {
 	        // display auth failure
 	        alert("auth failed");
