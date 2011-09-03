@@ -182,8 +182,8 @@ function makePostEditable(el, postId) {
 	    return(value);
     }, {type: 'textarea', submit: 'OK', cancel: 'Cancel', tooltip: 'Click to edit...'});
 
-    var storyFieldType = 'textarea';
-    if (ismobile) storyFieldType = 'jwysiwyg';
+    var storyFieldType = 'jwysiwyg';
+    if (ismobile) storyFieldType = 'textarea';
 
     $(el).find("#story").editable(function(value, setting) {
 	    if (value != null) {
