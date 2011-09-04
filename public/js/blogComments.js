@@ -44,6 +44,9 @@ $(document).ready(function() {
 
     socket.on('reconnect', function() {
         //console.log('Reconnected to server'); 
+	    $(".commendPool").html("");
+	    var postId = $(".blogEntry").attr('postid');
+	    socket.emit('getComments', {'postId': postId});
     });
     
     socket.on('reconnecting', function( nextRetry ) {
