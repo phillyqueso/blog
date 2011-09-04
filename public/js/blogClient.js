@@ -54,7 +54,8 @@ $(document).ready(function() {
     });
     
     socket.on('connect', function(){
-	    //console.log('Connected');
+	    //console.log('Connected')
+	    $("#blog").html(""); //empty
 	    socket.emit("load", postQuery);
     });
 
