@@ -15,7 +15,7 @@
     "connect-form": "~>0.2.1",
     "express": "~>2.4.6",
     "jade": "~>0.12.4",
-    "mongoose": "~>1.5.0",
+    "mongoose": "~>2.0.4",
     "socket.io": "~>0.8.2",
     "underscore": "~>1.1.7"
     }

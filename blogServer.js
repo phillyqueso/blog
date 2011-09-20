@@ -6,7 +6,8 @@ fs = require('fs'),
 io = require('socket.io').listen(app),
 config = require('./config.js').config,
 mongoose = require('mongoose'),
-db = mongoose.connect('mongodb://localhost/blog');
+db = mongoose.connect('mongodb://localhost/blog'),
+fields = ['createdDate', 'canComment', 'story', 'title', 'user']; // limited fields for posts query
 
 var storage = new express.session.MemoryStore();
 
@@ -28,8 +29,8 @@ app.configure(function() {
     app.use(form({ keepExtensions: true, uploadDir: __dirname + '/public/uploads/' }));
     app.use(express.cookieParser());
     app.use(express.session({ store: storage, secret: config.sessionSecret }));
-    app.use(app.router);
     app.use(express.static(__dirname + '/public'));
+    app.use(app.router);
 });
 
 app.configure('development', function(){
@@ -311,7 +312,7 @@ var main = io.of('/main').on('connection', function(client) {
 	            client.join(client.room);
                 
 	        }
-	        Posts.find(q).sort('_id', -1).limit(perPage).execFind(function(err, res) {
+	        Posts.find(q, fields).sort('_id', -1).limit(perPage).execFind(function(err, res) {
 	            if (res != null) {
 		            client.emit('loadPosts', {data: res});
 	            }
