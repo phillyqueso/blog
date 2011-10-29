@@ -2,7 +2,7 @@ header
   a(href='/') #{config.blogName}
 != partial('login')
 #blog
-  .blogEntry(postid='#{data._id}', postuser='#{data.user}')
+  .blogEntry(postid='#{data._id}', data_postuser='#{data.user}')
     #title #{data.title}
     #story!= data.story
     #byUser by 
